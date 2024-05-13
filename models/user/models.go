@@ -5,14 +5,14 @@
 package user
 
 import (
-	"github.com/jackc/pgx/v5/pgtype"
+	"database/sql"
 )
 
 type Profile struct {
 	ID        int64
-	FirstName pgtype.Text
-	LastName  pgtype.Text
-	Address   pgtype.Text
+	FirstName sql.NullString
+	LastName  sql.NullString
+	Address   sql.NullString
 }
 
 type User struct {
@@ -20,7 +20,7 @@ type User struct {
 	Email             string
 	Password          string
 	PhoneNumber       string
-	Otp               pgtype.Text
-	OtpExpirationTime pgtype.Timestamp
-	ProfileID         pgtype.Int4
+	Otp               sql.NullString
+	OtpExpirationTime sql.NullTime
+	ProfileID         sql.NullInt32
 }

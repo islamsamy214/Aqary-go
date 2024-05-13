@@ -7,52 +7,68 @@ package user
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
+	"database/sql"
 )
 
 const createProfile = `-- name: CreateProfile :one
 INSERT INTO profile (first_name, last_name, address)
 VALUES ($1, $2, $3)
-RETURNING id
+RETURNING id, first_name, last_name, address
 `
 
 type CreateProfileParams struct {
-	FirstName pgtype.Text
-	LastName  pgtype.Text
-	Address   pgtype.Text
+	FirstName sql.NullString
+	LastName  sql.NullString
+	Address   sql.NullString
 }
 
-func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) (int64, error) {
-	row := q.db.QueryRow(ctx, createProfile, arg.FirstName, arg.LastName, arg.Address)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+func (q *Queries) CreateProfile(ctx context.Context, arg CreateProfileParams) (Profile, error) {
+	row := q.db.QueryRowContext(ctx, createProfile, arg.FirstName, arg.LastName, arg.Address)
+	var i Profile
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Address,
+	)
+	return i, err
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (email, password, phone_number, profile_id)
-VALUES ($1, $2, $3, $4)
-RETURNING id
+INSERT INTO users (email, password, phone_number, otp, otp_expiration_time, profile_id)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, email, password, phone_number, otp, otp_expiration_time, profile_id
 `
 
 type CreateUserParams struct {
-	Email       string
-	Password    string
-	PhoneNumber string
-	ProfileID   pgtype.Int4
+    Email             string         `json:"email"`
+    Password          string         `json:"password"`
+    PhoneNumber       string         `json:"phone_number"`
+    Otp               sql.NullString `json:"otp"`
+    OtpExpirationTime sql.NullTime   `json:"otp_expiration_time"`
+    ProfileID         int64          `json:"profile_id"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, error) {
-	row := q.db.QueryRow(ctx, createUser,
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createUser,
 		arg.Email,
 		arg.Password,
 		arg.PhoneNumber,
+		arg.Otp,
+		arg.OtpExpirationTime,
 		arg.ProfileID,
 	)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Password,
+		&i.PhoneNumber,
+		&i.Otp,
+		&i.OtpExpirationTime,
+		&i.ProfileID,
+	)
+	return i, err
 }
 
 const deleteProfileByID = `-- name: DeleteProfileByID :exec
@@ -61,7 +77,7 @@ WHERE id = $1
 `
 
 func (q *Queries) DeleteProfileByID(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deleteProfileByID, id)
+	_, err := q.db.ExecContext(ctx, deleteProfileByID, id)
 	return err
 }
 
@@ -72,13 +88,13 @@ WHERE phone_number = $3
 `
 
 type GenerateOTPParams struct {
-	Otp               pgtype.Text
-	OtpExpirationTime pgtype.Timestamp
+	Otp               sql.NullString
+	OtpExpirationTime sql.NullTime
 	PhoneNumber       string
 }
 
 func (q *Queries) GenerateOTP(ctx context.Context, arg GenerateOTPParams) error {
-	_, err := q.db.Exec(ctx, generateOTP, arg.Otp, arg.OtpExpirationTime, arg.PhoneNumber)
+	_, err := q.db.ExecContext(ctx, generateOTP, arg.Otp, arg.OtpExpirationTime, arg.PhoneNumber)
 	return err
 }
 
@@ -93,13 +109,13 @@ type GetAllUsersRow struct {
 	ID          int64
 	Email       string
 	PhoneNumber string
-	FirstName   pgtype.Text
-	LastName    pgtype.Text
-	Address     pgtype.Text
+	FirstName   sql.NullString
+	LastName    sql.NullString
+	Address     sql.NullString
 }
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]GetAllUsersRow, error) {
-	rows, err := q.db.Query(ctx, getAllUsers)
+	rows, err := q.db.QueryContext(ctx, getAllUsers)
 	if err != nil {
 		return nil, err
 	}
@@ -119,6 +135,9 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]GetAllUsersRow, error) {
 		}
 		items = append(items, i)
 	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -132,13 +151,13 @@ WHERE id = $1
 `
 
 type GetProfileByIDRow struct {
-	FirstName pgtype.Text
-	LastName  pgtype.Text
-	Address   pgtype.Text
+	FirstName sql.NullString
+	LastName  sql.NullString
+	Address   sql.NullString
 }
 
 func (q *Queries) GetProfileByID(ctx context.Context, id int64) (GetProfileByIDRow, error) {
-	row := q.db.QueryRow(ctx, getProfileByID, id)
+	row := q.db.QueryRowContext(ctx, getProfileByID, id)
 	var i GetProfileByIDRow
 	err := row.Scan(&i.FirstName, &i.LastName, &i.Address)
 	return i, err
@@ -152,13 +171,13 @@ WHERE id = $1
 
 type UpdateProfileByIDParams struct {
 	ID        int64
-	FirstName pgtype.Text
-	LastName  pgtype.Text
-	Address   pgtype.Text
+	FirstName sql.NullString
+	LastName  sql.NullString
+	Address   sql.NullString
 }
 
 func (q *Queries) UpdateProfileByID(ctx context.Context, arg UpdateProfileByIDParams) error {
-	_, err := q.db.Exec(ctx, updateProfileByID,
+	_, err := q.db.ExecContext(ctx, updateProfileByID,
 		arg.ID,
 		arg.FirstName,
 		arg.LastName,
@@ -175,12 +194,12 @@ WHERE phone_number = $1 AND otp = $2
 
 type VerifyOTPParams struct {
 	PhoneNumber string
-	Otp         pgtype.Text
+	Otp         sql.NullString
 }
 
-func (q *Queries) VerifyOTP(ctx context.Context, arg VerifyOTPParams) (pgtype.Timestamp, error) {
-	row := q.db.QueryRow(ctx, verifyOTP, arg.PhoneNumber, arg.Otp)
-	var otp_expiration_time pgtype.Timestamp
+func (q *Queries) VerifyOTP(ctx context.Context, arg VerifyOTPParams) (sql.NullTime, error) {
+	row := q.db.QueryRowContext(ctx, verifyOTP, arg.PhoneNumber, arg.Otp)
+	var otp_expiration_time sql.NullTime
 	err := row.Scan(&otp_expiration_time)
 	return otp_expiration_time, err
 }

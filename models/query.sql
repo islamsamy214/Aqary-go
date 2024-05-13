@@ -1,7 +1,7 @@
 -- name: CreateUser :one
-INSERT INTO users (email, password, phone_number, profile_id)
-VALUES ($1, $2, $3, $4)
-RETURNING id;
+INSERT INTO users (email, password, phone_number, otp, otp_expiration_time, profile_id)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING *;
 
 -- name: GetAllUsers :many
 SELECT u.id, u.email, u.phone_number, p.first_name, p.last_name, p.address
@@ -22,7 +22,7 @@ WHERE phone_number = $1 AND otp = $2;
 -- name: CreateProfile :one
 INSERT INTO profile (first_name, last_name, address)
 VALUES ($1, $2, $3)
-RETURNING id;
+RETURNING *;
 
 -- name: GetProfileByID :one
 SELECT first_name, last_name, address
