@@ -48,7 +48,7 @@ func (uc *UserController) VerifyOTP(c *gin.Context) {
 // CreateProfile implements the logic to create a new profile
 func (uc *UserController) createProfile(c *gin.Context) {
 	//
-	c.JSON(http.StatusCreated, gin.H{"id": profileID})
+	// c.JSON(http.StatusCreated, gin.H{"id": profileID})
 }
 
 // UpdateProfileByID implements the logic to update a profile by its ID
