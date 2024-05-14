@@ -12,8 +12,7 @@ type Sql struct{}
 
 func (*Sql) Init() *sql.DB {
 	// connect to the pgsql database
-
-	db, err := sql.Open("postgres", "postgres://olo:password@localhost:5432/aqary-test?sslmode=disable")
+	db, err := sql.Open("postgres", "postgres://olo:password@localhost:5432/aqary?sslmode=disable")
 
 	if err != nil {
 		panic("Could not conncet to database due to: " + err.Error())
@@ -29,14 +28,3 @@ func (*Sql) Init() *sql.DB {
 	fmt.Println("session opened")
 	return db
 }
-
-// db := (&providers.Sql{}).Init() // initialize the database
-// 	// excute sample query
-// 	// 	INSERT INTO users (email, password, phone_number, profile_id)
-// 	// VALUES ($1, $2, $3, $4)
-// 	// RETURNING id;
-// 	_, err := db.Exec("INSERT INTO profile (first_name, last_name, address) VALUES ($1, $2, $3)", "John", "Doe", "123 Main St")
-
-// 	if err != nil {
-// 		panic("Could not insert into database due to: " + err.Error())
-// 	}

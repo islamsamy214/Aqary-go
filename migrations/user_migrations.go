@@ -15,9 +15,9 @@ func (*UserTable) CreateTables() {
 			id BIGSERIAL PRIMARY KEY,
 			email VARCHAR(255) NOT NULL,
 			password VARCHAR(255) NOT NULL,
-			phone_number VARCHAR(20) UNIQUE NOT NULL,
+			phone VARCHAR(20) UNIQUE NOT NULL,
 			otp VARCHAR(6),
-			otp_expiration_time TIMESTAMP,
+			otp_expiry TIMESTAMP,
 			profile_id INT,
 			FOREIGN KEY (profile_id) REFERENCES profiles(id)
 		);

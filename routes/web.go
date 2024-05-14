@@ -12,8 +12,8 @@ func Web(route *gin.Engine) {
 
 	// user
 	userController := controllers.UserController{}
+	route.GET("/api/users", userController.Index)
 	route.POST("/api/users", userController.Create)
-	route.GET("/api/users", userController.GetAll)
 	route.POST("/api/users/generateotp", userController.GenerateOTP)
 	route.POST("/api/users/verifyotp", userController.VerifyOTP)
 
