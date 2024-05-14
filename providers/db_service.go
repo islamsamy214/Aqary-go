@@ -36,10 +36,6 @@ func (*Sql) Init() *sql.DB {
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(5)
 
-	if err != nil {
-		panic(err.Error())
-	}
-
 	fmt.Println("session opened")
 	return db
 }
